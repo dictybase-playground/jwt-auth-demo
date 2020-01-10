@@ -1,10 +1,33 @@
 import React, { useEffect } from "react"
-import { BrowserRouter as Router, Switch, Route } from "react-router-dom"
-import LoginForm from "./LoginForm"
-import LoggedIn from "./LoggedIn"
+import { ApolloProvider } from "@apollo/react-hooks"
+import { ApolloClient } from "apollo-client"
+import { InMemoryCache } from "apollo-cache-inmemory"
+import { createHttpLink } from "apollo-link-http"
+import { setContext } from "apollo-link-context"
 import { useAuthStore } from "./AuthContext"
 import "./App.css"
 import Routes from "./Routes"
+
+const clientCreator = token => {
+  const authLink = setContext((_, { headers }) => {
+    return {
+      headers: {
+        ...headers,
+        authorization: token ? `Bearer ${token}` : "",
+      },
+    }
+  })
+
+  return new ApolloClient({
+    link: authLink.concat(
+      createHttpLink({
+        uri: `${process.env.REACT_APP_API_SERVER}/graphql`,
+        credentials: "include",
+      }),
+    ),
+    cache: new InMemoryCache({}),
+  })
+}
 
 const App = () => {
   const [{ token }, dispatch] = useAuthStore()
@@ -23,9 +46,13 @@ const App = () => {
         },
       })
     })
-  }, [])
+  }, [dispatch])
 
-  return <Routes />
+  return (
+    <ApolloProvider client={clientCreator(token)}>
+      <Routes />
+    </ApolloProvider>
+  )
 }
 
 export default App

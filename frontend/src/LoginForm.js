@@ -20,18 +20,17 @@ const LOGIN = gql`
 const LoginForm = () => {
   const [userData, setUserData] = React.useState({ username: "", password: "" })
   const history = useHistory()
-  const [{ isAuthenticated, token, user }, dispatch] = useAuthStore()
+  const [{ isAuthenticated }, dispatch] = useAuthStore()
   const [login] = useMutation(LOGIN)
 
   const handleSubmit = async event => {
     event.preventDefault()
     try {
       const { username, password } = userData
-      const url = `${process.env.REACT_APP_API_SERVER}/login`
       const res = await login({
         variables: {
-          username: userData.username,
-          password: userData.password,
+          username,
+          password,
         },
       })
       if (res && res.data) {
