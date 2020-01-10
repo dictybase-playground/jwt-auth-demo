@@ -1,33 +1,46 @@
 import React from "react"
 import { Link, useHistory } from "react-router-dom"
+import { useMutation } from "@apollo/react-hooks"
+import gql from "graphql-tag"
 import { useAuthStore } from "./AuthContext"
 import "./App.css"
+
+const LOGIN = gql`
+  mutation Login($username: String!, $password: String!) {
+    login(username: $username, password: $password) {
+      user {
+        id
+        username
+      }
+      token
+    }
+  }
+`
 
 const LoginForm = () => {
   const [userData, setUserData] = React.useState({ username: "", password: "" })
   const history = useHistory()
   const [{ isAuthenticated, token, user }, dispatch] = useAuthStore()
+  const [login] = useMutation(LOGIN)
 
   const handleSubmit = async event => {
     event.preventDefault()
     try {
       const { username, password } = userData
       const url = `${process.env.REACT_APP_API_SERVER}/login`
-      const res = await fetch(url, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
+      const res = await login({
+        variables: {
+          username: userData.username,
+          password: userData.password,
         },
-        mode: "cors",
-        body: JSON.stringify({ username, password }),
       })
-      const json = await res.json()
-      dispatch({
-        type: "LOGIN_SUCCESS",
-        payload: { token: json.token, user: json.user },
-      })
-      history.push("/loggedin")
+      if (res && res.data) {
+        dispatch({
+          type: "LOGIN_SUCCESS",
+          payload: { token: res.data.login.token, user: res.data.login.user },
+        })
+        history.push("/loggedin")
+      }
     } catch (error) {
       console.error("error with network ", error)
     }

@@ -43,9 +43,7 @@ const LoggedIn = () => {
 
   return (
     <header className="App-header">
-      <p>
-        {user.firstName} {user.lastName} is successfully logged in!
-      </p>
+      <p>{user.username} is successfully logged in!</p>
       <button onClick={handleLogout}>Logout</button>
     </header>
   )
