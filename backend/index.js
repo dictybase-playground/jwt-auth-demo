@@ -73,12 +73,6 @@ app.post("/refresh_token", (req, res) => {
       token: "",
     })
   }
-  // const refreshTokenVerified = refreshTokens.includes(refToken)
-  // if (!refreshTokenVerified) {
-  //   return res.send({
-  //     token: "",
-  //   })
-  // }
   const token = jwt.sign({ username: req.body.username }, "topSecret", {
     expiresIn: "15m",
   })
@@ -94,7 +88,7 @@ app.post("/refresh_token", (req, res) => {
 })
 
 app.post("/logout", (req, res) => {
-  res.cookie("refresh_token", "", {
+  res.cookie("refreshToken", "", {
     httpOnly: true,
     expires: new Date(0),
   })
