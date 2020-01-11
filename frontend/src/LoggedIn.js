@@ -11,11 +11,19 @@ import "./App.css"
 // }
 
 const LoggedIn = () => {
-  const [{ isAuthenticated, user }, dispatch] = useAuthStore()
+  const [{ isAuthenticated }, dispatch] = useAuthStore()
   const history = useHistory()
 
-  const handleLogout = () => {
-    dispatch({ type: "LOGOUT" })
+  const handleLogout = async () => {
+    try {
+      await fetch(`${process.env.REACT_APP_API_SERVER}/logout`, {
+        method: "POST",
+        credentials: "include",
+      })
+      dispatch({ type: "LOGOUT" })
+    } catch (error) {
+      console.error(error)
+    }
     history.push("/")
   }
 
@@ -32,7 +40,7 @@ const LoggedIn = () => {
 
   return (
     <header className="App-header">
-      <p>{user.username} is successfully logged in!</p>
+      <p> successfully logged in!</p>
       <button onClick={handleLogout}>Logout</button>
     </header>
   )

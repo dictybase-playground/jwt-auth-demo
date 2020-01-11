@@ -14,16 +14,18 @@ const authReducer = (state, action) => {
       const token = action.payload.token
       return {
         ...state,
-        isAuthenticated: token ? true : false,
+        isAuthenticated: token !== "" ? true : false,
         token,
         user: action.payload.user,
       }
     case "LOGOUT":
       return initialState
     case "UPDATE_TOKEN":
+      const newToken = action.payload.token
       return {
         ...state,
-        token: action.payload.token,
+        isAuthenticated: newToken !== "" ? true : false,
+        token: newToken,
       }
     default:
       return state
