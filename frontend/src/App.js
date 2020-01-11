@@ -40,6 +40,7 @@ const App = () => {
   const [{ token }, dispatch] = useAuthStore()
 
   useEffect(() => {
+    let interval
     const fetchRefreshToken = async () => {
       try {
         const res = await fetch(
@@ -61,11 +62,15 @@ const App = () => {
       }
     }
 
-    token === ""
-      ? fetchRefreshToken()
-      : setInterval(() => {
-          fetchRefreshToken()
-        }, 5000)
+    if (token !== "") {
+      interval = setInterval(() => {
+        fetchRefreshToken()
+      }, 5000)
+    } else {
+      fetchRefreshToken()
+    }
+
+    return () => clearInterval(interval)
   }, [dispatch, token])
 
   return (
