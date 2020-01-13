@@ -4,7 +4,7 @@ import { ApolloClient } from "apollo-client"
 import { InMemoryCache } from "apollo-cache-inmemory"
 import { createHttpLink } from "apollo-link-http"
 import { setContext } from "apollo-link-context"
-// import jwtDecode from "jwt-decode"
+import jwtDecode from "jwt-decode"
 import { useAuthStore } from "./AuthContext"
 import "./App.css"
 import Routes from "./Routes"
@@ -30,11 +30,20 @@ const clientCreator = token => {
   })
 }
 
-// const verifyToken = token => {
-//   const decodedToken = jwtDecode(token)
-//   const currentTime = Date.now().valueOf() / 1000
-//   return currentTime < decodedToken.exp ? true : false
-// }
+const verifyToken = token => {
+  const decodedToken = jwtDecode(token)
+  const currentTime = Date.now().valueOf() / 1000
+  return currentTime < decodedToken.exp ? true : false
+}
+
+const getTokenIntervalDelay = token => {
+  const decodedToken = jwtDecode(token)
+  const currentTime = new Date(Date.now())
+  const jwtTime = new Date(decodedToken.exp * 1000)
+  const timeDiff = jwtTime.getTime() - currentTime.getTime()
+  const timeDiffInMins = (jwtTime - currentTime) / 60000
+  return (timeDiffInMins / 3) * 60 * 1000 //
+}
 
 const App = () => {
   const [{ token }, dispatch] = useAuthStore()
@@ -62,10 +71,12 @@ const App = () => {
       }
     }
 
+    // need to fetch on mount
+    // if token is in state, then set interval to fetch refresh token
     if (token !== "") {
       interval = setInterval(() => {
         fetchRefreshToken()
-      }, 5000)
+      }, 60000) // check every minute
     } else {
       fetchRefreshToken()
     }
