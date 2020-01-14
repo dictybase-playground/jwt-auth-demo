@@ -6,6 +6,7 @@ import { createHttpLink } from "apollo-link-http"
 import { setContext } from "apollo-link-context"
 import jwtDecode from "jwt-decode"
 import { useAuthStore } from "./AuthContext"
+import useInterval from "./useInterval"
 import "./App.css"
 import Routes from "./Routes"
 
@@ -48,41 +49,71 @@ const getTokenIntervalDelay = token => {
 const App = () => {
   const [{ token }, dispatch] = useAuthStore()
 
-  useEffect(() => {
-    let interval
-    const fetchRefreshToken = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.REACT_APP_API_SERVER}/refresh_token`,
-          {
-            method: "POST",
-            credentials: "include",
-          },
-        )
-        const json = await res.json()
-        dispatch({
-          type: "UPDATE_TOKEN",
-          payload: {
-            token: json.token,
-          },
-        })
-      } catch (error) {
-        console.error(error)
-      }
+  const fetchRefreshToken = async () => {
+    try {
+      const res = await fetch(
+        `${process.env.REACT_APP_API_SERVER}/refresh_token`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      )
+      const json = await res.json()
+      dispatch({
+        type: "UPDATE_TOKEN",
+        payload: {
+          token: json.token,
+        },
+      })
+    } catch (error) {
+      console.error(error)
     }
+  }
 
-    // need to fetch on mount
-    // if token is in state, then set interval to fetch refresh token
-    if (token !== "") {
-      interval = setInterval(() => {
-        fetchRefreshToken()
-      }, 60000) // check every minute
-    } else {
+  // useEffect(() => {
+  //   let interval
+  //   const fetchRefreshToken = async () => {
+  //     try {
+  //       const res = await fetch(
+  //         `${process.env.REACT_APP_API_SERVER}/refresh_token`,
+  //         {
+  //           method: "POST",
+  //           credentials: "include",
+  //         },
+  //       )
+  //       const json = await res.json()
+  //       dispatch({
+  //         type: "UPDATE_TOKEN",
+  //         payload: {
+  //           token: json.token,
+  //         },
+  //       })
+  //     } catch (error) {
+  //       console.error(error)
+  //     }
+  //   }
+
+  //   // need to fetch on mount
+  //   // if token is in state, then set interval to fetch refresh token
+  //   if (token !== "") {
+  //     interval = setInterval(() => {
+  //       fetchRefreshToken()
+  //     }, 60000) // check every minute
+  //   } else {
+  //     fetchRefreshToken()
+  //   }
+
+  //   return () => clearInterval(interval)
+  // }, [dispatch, token])
+
+  useInterval(
+    () => {
       fetchRefreshToken()
-    }
-
-    return () => clearInterval(interval)
-  }, [dispatch, token])
+    },
+    5000,
+    true,
+    [dispatch, token],
+  )
 
   return (
     <ApolloProvider client={clientCreator(token)}>
