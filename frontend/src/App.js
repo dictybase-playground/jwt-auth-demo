@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react"
+import React, { useCallback, useRef } from "react"
 import { ApolloProvider } from "@apollo/react-hooks"
 import { ApolloClient } from "apollo-client"
 import { InMemoryCache } from "apollo-cache-inmemory"
@@ -6,6 +6,7 @@ import { createHttpLink } from "apollo-link-http"
 import { setContext } from "apollo-link-context"
 import jwtDecode from "jwt-decode"
 import { useAuthStore } from "./AuthContext"
+import useFetchRefreshToken from "./useFetchRefreshToken"
 import Routes from "./Routes"
 import "./App.css"
 
@@ -68,19 +69,7 @@ const App = () => {
     }
   }, [dispatch])
 
-  useEffect(() => {
-    fetchRefreshToken()
-  }, [fetchRefreshToken])
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      return
-    }
-    interval.current = setInterval(() => {
-      fetchRefreshToken()
-    }, delay)
-    return () => clearInterval(interval)
-  }, [fetchRefreshToken, isAuthenticated, delay])
+  useFetchRefreshToken(fetchRefreshToken, interval, delay, isAuthenticated)
 
   return (
     <ApolloProvider client={clientCreator(token)}>
