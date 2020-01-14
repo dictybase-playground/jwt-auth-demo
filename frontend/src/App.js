@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react"
+import React, { useCallback, useEffect, useRef } from "react"
 import { ApolloProvider } from "@apollo/react-hooks"
 import { ApolloClient } from "apollo-client"
 import { InMemoryCache } from "apollo-cache-inmemory"
@@ -6,9 +6,8 @@ import { createHttpLink } from "apollo-link-http"
 import { setContext } from "apollo-link-context"
 import jwtDecode from "jwt-decode"
 import { useAuthStore } from "./AuthContext"
-// import useInterval from "./useInterval"
-import "./App.css"
 import Routes from "./Routes"
+import "./App.css"
 
 const clientCreator = token => {
   const authLink = setContext((_, { headers }) => {
@@ -32,6 +31,9 @@ const clientCreator = token => {
 }
 
 const getTokenIntervalDelay = token => {
+  if (token === "") {
+    return
+  }
   const decodedToken = jwtDecode(token)
   const currentTime = new Date(Date.now())
   const jwtTime = new Date(decodedToken.exp * 1000)
@@ -42,6 +44,8 @@ const getTokenIntervalDelay = token => {
 
 const App = () => {
   const [{ token, isAuthenticated }, dispatch] = useAuthStore()
+  const interval = useRef(null)
+  const delay = getTokenIntervalDelay(token)
 
   const fetchRefreshToken = useCallback(async () => {
     try {
@@ -69,13 +73,14 @@ const App = () => {
   }, [fetchRefreshToken])
 
   useEffect(() => {
-    if (isAuthenticated) {
-      const interval = setInterval(() => {
-        fetchRefreshToken()
-      }, getTokenIntervalDelay(token))
-      return () => clearInterval(interval)
+    if (!isAuthenticated) {
+      return
     }
-  }, [fetchRefreshToken, isAuthenticated, token])
+    interval.current = setInterval(() => {
+      fetchRefreshToken()
+    }, delay)
+    return () => clearInterval(interval)
+  }, [fetchRefreshToken, isAuthenticated, delay])
 
   return (
     <ApolloProvider client={clientCreator(token)}>
