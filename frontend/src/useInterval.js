@@ -1,20 +1,9 @@
-import React, { useState, useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 
 // based on https://overreacted.io/making-setinterval-declarative-with-react-hooks/
 
-const useInterval = (
-  callback,
-  delay,
-  runOnLoad = false,
-  effectDependencies = [],
-) => {
+const useInterval = (callback, delay, item) => {
   const savedCallback = useRef()
-
-  useEffect(() => {
-    if (runOnLoad) {
-      callback()
-    }
-  }, [])
 
   // Remember the latest callback.
   useEffect(() => {
@@ -24,10 +13,16 @@ const useInterval = (
   // Set up the interval.
   useEffect(() => {
     if (delay !== null) {
-      const id = setInterval(() => savedCallback.current(), delay)
-      return () => clearInterval(id)
+      // need to fetch on mount
+      // if item (i.e. token) is in state, then set interval to call latest callback
+      if (item !== "") {
+        const interval = setInterval(() => savedCallback.current(), delay)
+        return () => clearInterval(interval)
+      } else {
+        callback()
+      }
     }
-  }, [delay, ...effectDependencies])
+  }, [delay, callback, item])
 }
 
 export default useInterval

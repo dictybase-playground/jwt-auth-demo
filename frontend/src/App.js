@@ -1,10 +1,10 @@
-import React, { useEffect } from "react"
+import React, { useCallback } from "react"
 import { ApolloProvider } from "@apollo/react-hooks"
 import { ApolloClient } from "apollo-client"
 import { InMemoryCache } from "apollo-cache-inmemory"
 import { createHttpLink } from "apollo-link-http"
 import { setContext } from "apollo-link-context"
-import jwtDecode from "jwt-decode"
+// import jwtDecode from "jwt-decode"
 import { useAuthStore } from "./AuthContext"
 import useInterval from "./useInterval"
 import "./App.css"
@@ -31,44 +31,33 @@ const clientCreator = token => {
   })
 }
 
-const verifyToken = token => {
-  const decodedToken = jwtDecode(token)
-  const currentTime = Date.now().valueOf() / 1000
-  return currentTime < decodedToken.exp ? true : false
-}
-
-const getTokenIntervalDelay = token => {
-  const decodedToken = jwtDecode(token)
-  const currentTime = new Date(Date.now())
-  const jwtTime = new Date(decodedToken.exp * 1000)
-  const timeDiff = jwtTime.getTime() - currentTime.getTime()
-  const timeDiffInMins = (jwtTime - currentTime) / 60000
-  return (timeDiffInMins / 3) * 60 * 1000 //
-}
-
 const App = () => {
   const [{ token }, dispatch] = useAuthStore()
 
-  const fetchRefreshToken = async () => {
-    try {
-      const res = await fetch(
-        `${process.env.REACT_APP_API_SERVER}/refresh_token`,
-        {
-          method: "POST",
-          credentials: "include",
-        },
-      )
-      const json = await res.json()
-      dispatch({
-        type: "UPDATE_TOKEN",
-        payload: {
-          token: json.token,
-        },
-      })
-    } catch (error) {
-      console.error(error)
-    }
-  }
+  useInterval(
+    useCallback(async () => {
+      try {
+        const res = await fetch(
+          `${process.env.REACT_APP_API_SERVER}/refresh_token`,
+          {
+            method: "POST",
+            credentials: "include",
+          },
+        )
+        const json = await res.json()
+        dispatch({
+          type: "UPDATE_TOKEN",
+          payload: {
+            token: json.token,
+          },
+        })
+      } catch (error) {
+        console.error(error)
+      }
+    }, [dispatch]),
+    60000,
+    token,
+  )
 
   // useEffect(() => {
   //   let interval
@@ -105,15 +94,6 @@ const App = () => {
 
   //   return () => clearInterval(interval)
   // }, [dispatch, token])
-
-  useInterval(
-    () => {
-      fetchRefreshToken()
-    },
-    5000,
-    true,
-    [dispatch, token],
-  )
 
   return (
     <ApolloProvider client={clientCreator(token)}>
