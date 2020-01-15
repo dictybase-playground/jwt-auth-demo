@@ -12,7 +12,7 @@ const useRefreshToken = (callback, intervalRef, delay, isAuthenticated) => {
     intervalRef.current = setInterval(() => {
       callback()
     }, delay)
-    return () => clearInterval(intervalRef)
+    return () => clearInterval(intervalRef.current)
   }, [callback, intervalRef, delay, isAuthenticated])
 }
 
